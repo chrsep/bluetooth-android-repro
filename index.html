@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Bluetooth Device Connector</title>
+    <style>
+      .error {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="bluetoothButton">Connect</button>
+    <div id="deviceInfo"></div>
+
+    <script>
+      let device = null;
+      const bluetoothButton = document.getElementById("bluetoothButton");
+      const deviceInfo = document.getElementById("deviceInfo");
+
+      bluetoothButton.addEventListener("click", async () => {
+        if (!device) {
+          try {
+            // Request any Bluetooth device
+            device = await navigator.bluetooth.requestDevice({
+              acceptAllDevices: true,
+            });
+
+            // Connect to the GATT server
+            const server = await device.gatt.connect();
+
+            // Display device information
+            deviceInfo.innerHTML = `
+            <p><strong>Device Name:</strong> ${device.name || "Unknown"}</p>
+            <p><strong>Device ID:</strong> ${device.id}</p>
+          `;
+
+            // Change button to "Disconnect"
+            bluetoothButton.textContent = "Disconnect";
+
+            // Handle device disconnection
+            device.addEventListener("gattserverdisconnected", onDisconnected);
+          } catch (error) {
+            console.error("An error occurred:", error);
+            // Display error message in red
+            deviceInfo.innerHTML = `<p class="error">Connection failed: ${error.message}</p>`;
+          }
+        } else {
+          // Disconnect the device
+          if (device.gatt.connected) {
+            device.gatt.disconnect();
+          }
+          onDisconnected();
+        }
+      });
+
+      function onDisconnected() {
+        deviceInfo.innerHTML = "<p>Device disconnected.</p>";
+        bluetoothButton.textContent = "Connect";
+        device = null;
+      }
+    </script>
+  </body>
+</html>
